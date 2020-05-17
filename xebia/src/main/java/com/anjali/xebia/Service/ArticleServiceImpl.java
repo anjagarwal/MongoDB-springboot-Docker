@@ -31,6 +31,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    // I can use anyone of the following either MongoTemplate or ArticleRepository whick is extending to MongoRepository
     @Autowired
     private ArticleRepository articleRepository;
 
@@ -49,7 +50,7 @@ public class ArticleServiceImpl implements ArticleService {
             String s = article.getTitle();
             s = s.replaceAll(" ", "-").toLowerCase();
             article.setSlug(s);
-            return new ResponseEntity<>(mongoTemplate.save(article), HttpStatus.CREATED);
+            return new ResponseEntity<>(articleRepository.save(article), HttpStatus.CREATED);
         }
         else
             return new ResponseEntity<>("Article with almost same body is already present",HttpStatus.BAD_REQUEST);
@@ -70,7 +71,9 @@ public class ArticleServiceImpl implements ArticleService {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
         Article updatedArticle =  mongoTemplate.findOne(query, Article.class);
-        if (null == updatedArticle || stringSimilarityService.score(article.getTitle(), updatedArticle.getTitle()) > 0.70)
+        if (null == updatedArticle)
+            throw new Exception("Article with given id is not found");
+        else if (stringSimilarityService.score(article.getTitle(), updatedArticle.getTitle()) > 0.70)
             return new ResponseEntity<>("Title is almost similar",HttpStatus.BAD_REQUEST);
         else {
             String title = article.getTitle().replaceAll(" ","-").toLowerCase();
@@ -118,16 +121,20 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public TimeToReadArticle getTimeToRead(String id) {
+    public TimeToReadArticle getTimeToRead(String id) throws Exception {
         TimeToReadArticle timeToReadArticle = new TimeToReadArticle();
         timeToReadArticle.setArticleId(id);
         Article article = articleRepository.findByIdEquals(id);
-        int totalNoOfWords = article.getBody().split(" ").length;
-        int time = totalNoOfWords/averageSpeed;
-        int minutes = time / 60;
-        int seconds = time % 60;
-        timeToReadArticle.setTimeToRead(new TimeToRead(minutes,seconds));
-        return timeToReadArticle;
+        if (null == article)
+            throw new Exception("Article with given id is not found");
+        else {
+            int totalNoOfWords = article.getBody().split(" ").length;
+            int time = totalNoOfWords / averageSpeed;
+            int minutes = time / 60;
+            int seconds = time % 60;
+            timeToReadArticle.setTimeToRead(new TimeToRead(minutes, seconds));
+            return timeToReadArticle;
+        }
     }
 
     @Override
@@ -136,7 +143,7 @@ public class ArticleServiceImpl implements ArticleService {
         TagMetrics tagMetrics;
         List<Article> articleList = articleRepository.findAll();
         List<String> strings =  articleList.stream().flatMap(article -> article.getTags().stream()).collect(Collectors.toList());
-        Map<String, Long> tags =  strings.stream().collect(Collectors.groupingBy(e -> e.toLowerCase(), Collectors.counting()));
+        Map<String, Long> tags =  strings.stream().collect(Collectors.groupingBy(String::toLowerCase, Collectors.counting()));
         for (Map.Entry<String, Long> entry : tags.entrySet()) {
             tagMetrics = new TagMetrics();
             tagMetrics.setTag(entry.getKey());

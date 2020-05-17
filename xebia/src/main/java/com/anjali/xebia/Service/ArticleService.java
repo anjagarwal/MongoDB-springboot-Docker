@@ -22,7 +22,7 @@ public interface ArticleService {
 
      Article deleteArticle(String id);
 
-     TimeToReadArticle getTimeToRead(String id);
+     TimeToReadArticle getTimeToRead(String id) throws Exception;
 
      List<TagMetrics> getAllTags();
 }
