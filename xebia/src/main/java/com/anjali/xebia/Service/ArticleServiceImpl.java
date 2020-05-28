@@ -104,7 +104,7 @@ public class ArticleServiceImpl implements ArticleService {
         if (null == page)
             throw new Exception("No articles found");
         else {
-            responseMap.put("data",page);
+            responseMap.put("data",page.getContent());
             responseMap.put("Total no. of elements",page.getTotalElements());
             responseMap.put("Total no. of pages", page.getTotalPages());
             responseMap.put("Current page no.",page.getNumber());

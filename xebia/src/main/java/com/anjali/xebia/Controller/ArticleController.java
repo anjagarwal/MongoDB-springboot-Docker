@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -75,14 +76,13 @@ public class ArticleController {
         }
     }
 
-    @RequestMapping(value = "/articles", method = RequestMethod.GET)
+    @RequestMapping(value = "/articles", method = RequestMethod.POST)
     @GetMapping
-    public ResponseEntity getAllArticles(@RequestParam(value = "pageNo", defaultValue = "0") int pageNo,
-                                         @RequestParam(value = "pageSize", defaultValue = "2") int pageSize,
-                                         @RequestParam(value = "sortBy", defaultValue = "id") String sortBy)
+    public ResponseEntity getAllArticles(@RequestBody Map<String, Object> params)
     {
         try {
-            return new ResponseEntity<>(articleService.getAllArticles(pageNo, pageSize, sortBy), HttpStatus.FOUND);
+            return new ResponseEntity<>(articleService.getAllArticles((int)params.getOrDefault("pageNo", 0),
+                    (int)params.getOrDefault("pageSize", 2), (String)params.getOrDefault("sortBy", "body")), HttpStatus.FOUND);
         }
         catch (Exception e)
         {
